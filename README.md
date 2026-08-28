@@ -144,6 +144,8 @@ anydoc reads text-based PDFs locally but does no OCR, so a PDF with scanned or i
 
 Only documents that need OCR leave the machine, and the whole document goes, since Parse has no page selection. If Parse cannot convert it, Node rejects with `code: 'hosted'` and Python raises `HostedError`. `--api-url`, `apiUrl` and `api_url`, else `FIRECRAWL_API_URL`, point at another Parse deployment. The Rust crate has no `ocr` option and never makes network calls.
 
+> **This fork requires a second opt-in.** Uploading is gated on `ANYDOC_ALLOW_UPLOAD=1` in the environment, and fails closed without it. Opting in through the API alone is not enough: `ocr: 'hosted'` is a flag, and a flag is something an autonomous agent can pass on its own, so the disclosure decision is kept somewhere only the document's owner can set it.
+
 ## Features
 
 - **One output for every format.** Each format parses into a shared document model and renders through a single Markdown serializer, so escaping, tables, heading anchors, and footnotes behave identically whether the input was a `.doc` from 2003 or a `.pptx` from yesterday.
