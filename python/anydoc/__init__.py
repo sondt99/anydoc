@@ -103,9 +103,23 @@ _API_URL = "https://api.firecrawl.dev"
 _TIMEOUT_SECONDS = 300
 
 
+def _require_upload_consent() -> None:
+    """`ocr="hosted"` is an argument, and an argument is something an
+    autonomous agent can decide to pass on its own. Uploading the document is
+    a disclosure decision that belongs to whoever owns the document, so
+    require a second opt-in from the environment. Fail closed."""
+    if os.environ.get("ANYDOC_ALLOW_UPLOAD") == "1":
+        return
+    raise HostedError(
+        'refusing to upload: ocr="hosted" sends the entire document to '
+        "Firecrawl Parse. Set ANYDOC_ALLOW_UPLOAD=1 to allow it."
+    )
+
+
 # The whole document goes, not only the pages that need OCR: Parse has no
 # page selection.
 def _parse_hosted(data: bytes, filename: str, api_key: "str | None", api_url: "str | None") -> str:
+    _require_upload_consent()
     if api_key is None:
         api_key = os.environ.get("FIRECRAWL_API_KEY")
     api_url = api_url or os.environ.get("FIRECRAWL_API_URL") or _API_URL
@@ -130,8 +144,9 @@ def _parse_hosted(data: bytes, filename: str, api_key: "str | None", api_url: "s
     if status != 200 or not reply.get("success"):
         detail = reply.get("error") or f"HTTP {status}"
         raise HostedError(_describe(status, detail, bool(api_key)))
-    data = reply.get("data")
-    markdown = data.get("markdown") if isinstance(data, dict) else None
+    # Not `data`: that is this function's `bytes` parameter.
+    payload = reply.get("data")
+    markdown = payload.get("markdown") if isinstance(payload, dict) else None
     if not isinstance(markdown, str) or not markdown:
         raise HostedError("Firecrawl Parse returned no Markdown")
     return markdown if markdown.endswith("\n") else markdown + "\n"

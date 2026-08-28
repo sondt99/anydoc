@@ -37,9 +37,22 @@ function sendsToHosted(error, options) {
   return error.code === 'needsOcr' && options?.ocr === 'hosted'
 }
 
+// `ocr: 'hosted'` is a flag, and a flag is something an autonomous agent can
+// decide to pass on its own. Uploading the document is a disclosure decision
+// that belongs to whoever owns the document, so require a second opt-in that
+// has to come from the environment. Fail closed: no variable, no upload.
+function requireUploadConsent() {
+  if (process.env.ANYDOC_ALLOW_UPLOAD === '1') return
+  throw hostedError(
+    "refusing to upload: ocr 'hosted' sends the entire document to Firecrawl Parse. " +
+      'Set ANYDOC_ALLOW_UPLOAD=1 to allow it.',
+  )
+}
+
 // The whole document goes, not only the pages that need OCR: Parse has no
 // page selection.
 async function parseHosted(bytes, filename, options) {
+  requireUploadConsent()
   const apiKey = options.apiKey ?? process.env.FIRECRAWL_API_KEY
   const apiUrl = options.apiUrl ?? process.env.FIRECRAWL_API_URL ?? API_URL
   const url = `${apiUrl.replace(/\/$/, '')}/v2/parse`
