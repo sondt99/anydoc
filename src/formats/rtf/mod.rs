@@ -1366,7 +1366,7 @@ mod tests {
     /// dropping the tree.
     #[test]
     fn deep_math_nesting_stays_within_the_xml_depth_bound() {
-        let mut src = String::from(r"{\rtf1\ansi {\*\mmath ");
+        let mut src = String::from(r"{\rtf1\ansi {\mmath ");
         // Stay under the group bound so this exercises the math cap alone.
         let groups = limits::MAX_XML_DEPTH * 2;
         src.push_str(&"{".repeat(groups));

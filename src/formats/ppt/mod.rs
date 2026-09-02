@@ -660,14 +660,15 @@ mod tests {
     /// `depth` NotesContainers (0x03F0), each holding the next. No NotesAtom
     /// child, so none of them reads as the notes master.
     fn nested_notes(depth: usize) -> Vec<u8> {
-        let mut buf: Vec<u8> = Vec::new();
-        for _ in 0..depth {
-            let mut outer = Vec::with_capacity(buf.len() + 8);
-            outer.extend_from_slice(&0x000Fu16.to_le_bytes()); // container
-            outer.extend_from_slice(&0x03F0u16.to_le_bytes()); // NotesContainer
-            outer.extend_from_slice(&(buf.len() as u32).to_le_bytes());
-            outer.extend_from_slice(&buf);
-            buf = outer;
+        let stream_len = depth.checked_mul(8).expect("nested record stream length overflow");
+        let mut buf = vec![0; stream_len];
+        for (index, header) in buf.chunks_exact_mut(8).enumerate() {
+            header[0..2].copy_from_slice(&0x000Fu16.to_le_bytes()); // container
+            header[2..4].copy_from_slice(&0x03F0u16.to_le_bytes()); // NotesContainer
+            let inner_len = stream_len - (index + 1) * 8;
+            header[4..8].copy_from_slice(
+                &u32::try_from(inner_len).expect("nested record stream exceeds u32").to_le_bytes(),
+            );
         }
         buf
     }

@@ -1,10 +1,12 @@
-//! Fixed safety limits, applied identically to every conversion.
+//! Fixed safety limits for document conversion.
 //!
 //! These are hard caps against attack/abuse input shapes (decompression
-//! bombs, pathological nesting, runaway expansion) - crossing one returns
-//! [`ConvertError::ResourceLimit`](crate::ConvertError::ResourceLimit),
-//! always. They are deliberately not configurable: real-world documents sit
-//! orders of magnitude below every value here.
+//! bombs, pathological nesting, runaway expansion). Most limits return
+//! [`ConvertError::ResourceLimit`](crate::ConvertError::ResourceLimit) when
+//! crossed; limits whose comments explicitly describe graceful degradation
+//! instead retain partial/default output. They are deliberately not
+//! configurable: real-world documents sit orders of magnitude below every
+//! value here.
 
 /// Maximum decompressed size of a single archive entry: 128 MiB.
 pub const MAX_ENTRY_BYTES: u64 = 128 * 1024 * 1024;
